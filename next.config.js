@@ -2,6 +2,16 @@
 module.exports = {
   reactStrictMode: true,
   experimental: {
-    serverActions: true,
+    serverActions: true
   },
-};
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+        port: '',
+        pathname: '/**'
+      }
+    ]
+  }
+}

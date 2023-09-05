@@ -6,16 +6,12 @@ import { IconArrowRight } from '@/components/ui/icons'
 
 const exampleMessages = [
   {
-    heading: 'Explain technical concepts',
-    message: `What is a "serverless function"?`
+    heading: 'Agriculture Patent',
+    message: `Think of a new Patent idea for agriculture welfare`
   },
   {
-    heading: 'Summarize an article',
-    message: 'Summarize the following article for a 2nd grader: \n'
-  },
-  {
-    heading: 'Draft an email',
-    message: `Draft an email to my boss about the following: \n`
+    heading: 'Hallucinate on a new Patent idea',
+    message: 'Hallucinate on a new Patent idea'
   }
 ]
 
@@ -24,13 +20,13 @@ export function EmptyScreen({ setInput }: Pick<UseChatHelpers, 'setInput'>) {
     <div className="mx-auto max-w-2xl px-4">
       <div className="rounded-lg border bg-background p-8">
         <h1 className="mb-2 text-lg font-semibold">
-          Welcome to Next.js AI Chatbot!
+          Welcome to Self Agent!
         </h1>
         <p className="mb-2 leading-normal text-muted-foreground">
-          This is an open source AI chatbot app template built with{' '}
-          <ExternalLink href="https://nextjs.org">Next.js</ExternalLink> and{' '}
+          This is a private self-thinking patent generator. Made by {' '}
+          <ExternalLink href="https://rankjay.com">Jay Rank</ExternalLink> and{' '}
           <ExternalLink href="https://vercel.com/storage/kv">
-            Vercel KV
+            Aamir Patel
           </ExternalLink>
           .
         </p>
