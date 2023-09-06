@@ -5,6 +5,7 @@ import { PromptForm } from '@/components/prompt-form'
 import { ButtonScrollToBottom } from '@/components/button-scroll-to-bottom'
 import { IconRefresh, IconStop } from '@/components/ui/icons'
 import { FooterText } from '@/components/footer'
+import { Dispatch, SetStateAction } from 'react'
 
 export interface ChatPanelProps
   extends Pick<
@@ -18,6 +19,7 @@ export interface ChatPanelProps
     | 'setInput'
   > {
   id?: string
+  setMasterTrigger: Dispatch<SetStateAction<boolean>>
 }
 
 export function ChatPanel({
@@ -28,7 +30,8 @@ export function ChatPanel({
   reload,
   input,
   setInput,
-  messages
+  messages,
+  setMasterTrigger
 }: ChatPanelProps) {
   return (
     <div className="fixed inset-x-0 bottom-0 bg-gradient-to-b from-muted/10 from-10% to-muted/30 to-50%">
@@ -56,14 +59,27 @@ export function ChatPanel({
               </Button>
             )
           )}
-          <Button
+          {isLoading ? (
+            <Button
               variant="outline"
-              onClick={() => reload()}
+              onClick={() => setMasterTrigger(false)}
               className="bg-background"
             >
-              <IconRefresh className="mr-2" />
-              Iterate again
+              <IconStop className="mr-2" />
+              Iterating
             </Button>
+          ) : (
+            messages?.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => reload()}
+                className="bg-background"
+              >
+                <IconRefresh className="mr-2" />
+                Iterate again
+              </Button>
+            )
+          )}
         </div>
         <div className="space-y-4 border-t bg-background px-4 py-2 shadow-lg sm:rounded-t-xl sm:border md:py-4">
           <PromptForm

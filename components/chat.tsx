@@ -21,6 +21,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { toast } from 'react-hot-toast'
 import { pineconeCLientIndex, pineconeFormat } from '@/app/actions'
+import { usePathname } from 'next/navigation'
 
 const IS_PREVIEW = process.env.VERCEL_ENV === 'preview'
 export interface ChatProps extends React.ComponentProps<'div'> {
@@ -36,6 +37,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   const [previewTokenDialog, setPreviewTokenDialog] = useState(IS_PREVIEW)
   const [previewTokenInput, setPreviewTokenInput] = useState(previewToken ?? '')
   const [lock, setLock] = useState<boolean>(false);
+  const [masterTrigger, setMasterTrigger] = useState<boolean>(false);
+  const pathname = usePathname();
   const { messages, setMessages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       initialMessages,
@@ -51,38 +54,40 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
       }
     })
 
+    const self_loop = async () => {
+      setLock(true);
+      const query_to_vector = messages[messages.length - 1].role === 'assistant' ? messages[messages.length - 1].content : messages[messages.length - 2].content
+      const response1 = await fetch('/api/embedding', {
+        method: 'POST',
+        body: JSON.stringify({
+          message: query_to_vector
+        })
+      })
+      const vector_query = await response1.json()
+      const response2 = await pineconeCLientIndex(await vector_query.embedding);
+      const new_search_query = await pineconeFormat(await response2);
+      console.log(response2, new_search_query);
+      setMessages([...messages, {
+        id: 'new',
+        role: 'user',
+        content: new_search_query
+      }])
+
+      reload();
+      // append({
+      //   id: 'new',
+      //   role: 'user',
+      //   content: new_search_query
+      // })
+    }
 
     useEffect(() => {
-      if (messages.length > 3 && !lock && !isLoading) {
-        const self_loop = async () => {
-          setLock(true);
-          const query_to_vector = messages[messages.length - 1].role === 'assistant' ? messages[messages.length - 1].content : messages[messages.length - 2].content
-          const response1 = await fetch('/api/embedding', {
-            method: 'POST',
-            body: JSON.stringify({
-              message: query_to_vector
-            })
-          })
-          const vector_query = await response1.json()
-          const response2 = await pineconeCLientIndex(await vector_query.embedding);
-          const new_search_query = await pineconeFormat(await response2);
-          console.log(response2, new_search_query);
-          setMessages([...messages, {
-            id: 'new',
-            role: 'user',
-            content: new_search_query
-          }])
-
-          reload();
-          // append({
-          //   id: 'new',
-          //   role: 'user',
-          //   content: new_search_query
-          // })
-        }
+      const decideToLoop = pathname.slice(0, 5) === '/chat' ? masterTrigger : messages.length > 3 && !lock && !isLoading;
+      if (decideToLoop || masterTrigger) {
         self_loop();
       }
-    }, [messages, isLoading])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [messages, isLoading, masterTrigger])
   return (
     <>
       <div className={cn('pb-[200px] pt-4 md:pt-10', className)}>
@@ -104,6 +109,7 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         messages={messages}
         input={input}
         setInput={setInput}
+        setMasterTrigger={setMasterTrigger}
       />
 
       <Dialog open={previewTokenDialog} onOpenChange={setPreviewTokenDialog}>
