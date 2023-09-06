@@ -79,8 +79,6 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
           //   role: 'user',
           //   content: new_search_query
           // })
-          
-          setLock(true);
         }
         self_loop();
       }
