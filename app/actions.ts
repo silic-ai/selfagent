@@ -3,9 +3,47 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { kv } from '@vercel/kv'
+import { PineconeClient } from '@pinecone-database/pinecone'
 
 import { auth } from '@/auth'
 import { type Chat } from '@/lib/types'
+import { QueryResponse } from '@pinecone-database/pinecone/dist/pinecone-generated-ts-fetch'
+
+const pinecone = new PineconeClient()
+
+export const pineconeFormat = (queryResponse: QueryResponse) => {
+  let query = 'OLD PATENTS:\n\n'
+  if (queryResponse.matches) {
+    for (let i = 0; i < queryResponse.matches.length; i++) {
+      const metadata = queryResponse.matches[i].metadata as Record<string, any>
+      query += metadata.Abstract + "\n\n"
+    }
+  }
+
+  query += 'Now hallucinate on the original patent idea I gave above, and think of a new patent idea based on this relevant old patents in similar field'
+
+  return query;
+}
+
+export const pineconeCLientIndex = async (query: number[]) => {
+  await pinecone.init({
+    environment: 'gcp-starter',
+    apiKey: '1f6cd3dc-3ac4-4d97-ac9e-fd54b626030f'
+  })
+
+  const index = pinecone.Index('text-patent-1')
+  const queryResponse = await index.query({
+    queryRequest: {
+      namespace: '',
+      topK: 10,
+      includeValues: true,
+      includeMetadata: true,
+      vector: query
+    }
+  })
+
+  return queryResponse
+}
 
 export async function getChats(userId?: string | null) {
   if (!userId) {

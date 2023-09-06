@@ -16,10 +16,11 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { toast } from 'react-hot-toast'
+import { pineconeCLientIndex, pineconeFormat } from '@/app/actions'
 
 const IS_PREVIEW = process.env.VERCEL_ENV === 'preview'
 export interface ChatProps extends React.ComponentProps<'div'> {
@@ -34,7 +35,8 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
   )
   const [previewTokenDialog, setPreviewTokenDialog] = useState(IS_PREVIEW)
   const [previewTokenInput, setPreviewTokenInput] = useState(previewToken ?? '')
-  const { messages, append, reload, stop, isLoading, input, setInput } =
+  const [lock, setLock] = useState<boolean>(false);
+  const { messages, setMessages, append, reload, stop, isLoading, input, setInput } =
     useChat({
       initialMessages,
       id,
@@ -48,6 +50,41 @@ export function Chat({ id, initialMessages, className }: ChatProps) {
         }
       }
     })
+
+
+    useEffect(() => {
+      if (messages.length > 3 && !lock && !isLoading) {
+        const self_loop = async () => {
+          setLock(true);
+          const query_to_vector = messages[messages.length - 1].role === 'assistant' ? messages[messages.length - 1].content : messages[messages.length - 2].content
+          const response1 = await fetch('/api/embedding', {
+            method: 'POST',
+            body: JSON.stringify({
+              message: query_to_vector
+            })
+          })
+          const vector_query = await response1.json()
+          const response2 = await pineconeCLientIndex(await vector_query.embedding);
+          const new_search_query = await pineconeFormat(await response2);
+          console.log(response2, new_search_query);
+          setMessages([...messages, {
+            id: 'new',
+            role: 'user',
+            content: new_search_query
+          }])
+
+          reload();
+          // append({
+          //   id: 'new',
+          //   role: 'user',
+          //   content: new_search_query
+          // })
+          
+          setLock(true);
+        }
+        self_loop();
+      }
+    }, [messages, isLoading])
   return (
     <>
       <div className={cn('pb-[200px] pt-4 md:pt-10', className)}>
